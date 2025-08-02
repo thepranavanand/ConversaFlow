@@ -2,26 +2,29 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, getIO, getUserSocketMap } from "../lib/socket.js";
+import { getReceiverSocketId, getIO } from "../lib/socket.js";
 
 const parseTags = (text) => {
+  console.log('parseTags called with text:', text);
   if (!text) {
+    console.log('No text provided to parseTags');
     return { tags: [], metadata: new Map() };
   }
   
-  const tagPattern = /@(taskRequest|statusUpdate|clarificationNeeded|deadlineReminder|bugReport|messageAcknowledged|urgentNotice|meetingSchedule|infoSharing|workFeedback)(?:\s*\[([^\]]*)\])?/;
+  const tagPattern = /@(task|decision|deadline|defer|confirm|wait|done|fail|abort|retry)(?:\s*\[([^\]]*)\])?/;
   const tags = [];
   const metadata = new Map();
   
-  // Only find the FIRST tag match, ignore subsequent ones
+  console.log('Using regex pattern:', tagPattern);
+  
   const match = tagPattern.exec(text);
   if (match) {
+    console.log('Found first tag match:', match);
     const tag = match[1];
     const metadataStr = match[2];
     
     tags.push(tag);
     
-    // Parse metadata if present (format: assignee:developer,priority:high)
     if (metadataStr) {
       const metaPairs = metadataStr.split(',').map(pair => pair.trim());
       metaPairs.forEach(pair => {
@@ -32,19 +35,19 @@ const parseTags = (text) => {
       });
     }
     
-    // Add default metadata
     metadata.set('tag', tag);
     metadata.set('timestamp', new Date().toISOString());
   }
+  
+  console.log('Final parsed tags:', tags);
+  console.log('Final parsed metadata:', Object.fromEntries(metadata));
   
   return { tags, metadata };
 };
 
 const extractLinkedMessage = (text, replyTo) => {
-  // If it's a reply, link to the replied message
   if (replyTo) return replyTo;
   
-  // Look for message references like "ref:messageId" or "#messageId"
   const refPattern = /(?:ref:|#)([a-f0-9]{24})/i;
   const match = text.match(refPattern);
   return match ? match[1] : null;
@@ -83,38 +86,38 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-
+    console.log('SendMessage controller called with body:', req.body);
+    console.log('File from multer:', req.file);
+    console.log('Authenticated user:', req.user);
     
     const { text, image, replyTo } = req.body;
     const { id: receiverId } = req.params;
     
-    // ALWAYS use the authenticated user's ID, never trust client-provided senderId
     const senderId = req.user._id;
+    console.log('Using senderId from auth:', senderId);
     
     const io = getIO();
 
     let imageUrl;
     
-    // Handle file upload from multer
     if (req.file) {
       imageUrl = `/uploads/${req.file.filename}`;
+      console.log('File upload detected, imageUrl:', imageUrl);
     } 
-    // Handle base64 image from body
     else if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image, {
-        folder: "chat_images",
-        quality: "auto:good",
-        fetch_format: "auto",
-        flags: "progressive"
-      });
+      const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
+      console.log('Base64 image upload, imageUrl:', imageUrl);
     }
 
     const { tags, metadata } = parseTags(text);
     const linkedMessage = extractLinkedMessage(text, replyTo);
+    
+    console.log('Parsed tags:', tags);
+    console.log('Parsed metadata:', metadata);
 
     const newMessage = new Message({
-      senderId,  // This is now guaranteed to be from req.user._id
+      senderId,
       receiverId,
       text: text || '',
       image: imageUrl,
@@ -124,32 +127,35 @@ export const sendMessage = async (req, res) => {
       linked_to: linkedMessage
     });
 
+    console.log('Message to save:', newMessage);
     await newMessage.save();
 
-    // Populate the message for response
     const populatedMessage = await Message.findById(newMessage._id)
       .populate('senderId', 'fullName profilePic')
       .populate('receiverId', 'fullName profilePic')
       .populate('replyTo', 'text image file')
       .populate('linked_to', 'text tag');
 
-
+    console.log('Saved message with senderId:', populatedMessage.senderId);
+    console.log('Message senderId type:', typeof populatedMessage.senderId);
+    console.log('ReceiverID:', receiverId, 'SenderID:', senderId);
 
     const receiverSocketId = getReceiverSocketId(receiverId);
-    const senderSocketId = getReceiverSocketId(senderId.toString());
+    const senderSocketId = getReceiverSocketId(senderId);
     
-    // Set delivery status based on receiver's online status
-    let deliveryStatus = 'sent';
+    console.log('Receiver socket ID:', receiverSocketId);
+    console.log('Sender socket ID:', senderSocketId);
+    
     if (receiverSocketId) {
-      deliveryStatus = 'delivered';
-      populatedMessage.status = 'delivered';
-      populatedMessage.deliveredAt = new Date();
-      await populatedMessage.save();
+      console.log(`Emitting newMessage to receiver ${receiverId} via socket ${receiverSocketId}`);
+      io.to(receiverSocketId).emit("newMessage", populatedMessage);
+    } else {
+      console.log(`No socket found for receiver ${receiverId}`);
     }
     
-    // Emit to receiver if they're online
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", populatedMessage);
+    if (senderSocketId && senderSocketId !== receiverSocketId) {
+      console.log(`Emitting newMessage to sender ${senderId} via socket ${senderSocketId}`);
+      io.to(senderSocketId).emit("newMessage", populatedMessage);
     }
 
     res.status(201).json(populatedMessage);
@@ -184,14 +190,11 @@ export const getTaggedMessages = async (req, res) => {
       .populate('linked_to', 'text tag senderId receiverId createdAt')
       .sort({ createdAt: 1 });
 
-    // Create a result array that includes both tagged messages and their context
     const messagesWithContext = [];
     const addedMessageIds = new Set();
 
     for (const taggedMsg of taggedMessages) {
-      // Add the original message if this is a reply and we haven't added it yet
       if (taggedMsg.replyTo && !addedMessageIds.has(taggedMsg.replyTo._id.toString())) {
-        // Populate the replyTo message fully
         const originalMessage = await Message.findById(taggedMsg.replyTo._id)
           .populate('senderId', 'fullName profilePic')
           .populate('receiverId', 'fullName profilePic');
@@ -199,14 +202,13 @@ export const getTaggedMessages = async (req, res) => {
         if (originalMessage) {
           messagesWithContext.push({
             ...originalMessage.toObject(),
-            isContext: true, // Flag to indicate this is context for a tagged message
+            isContext: true,
             relatedTaggedMessage: taggedMsg._id
           });
           addedMessageIds.add(originalMessage._id.toString());
         }
       }
 
-      // Add the tagged message
       if (!addedMessageIds.has(taggedMsg._id.toString())) {
         messagesWithContext.push({
           ...taggedMsg.toObject(),
@@ -216,7 +218,6 @@ export const getTaggedMessages = async (req, res) => {
       }
     }
 
-    // Sort by creation time to maintain chronological order
     messagesWithContext.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json(messagesWithContext);
@@ -231,44 +232,36 @@ export const deleteMessage = async (req, res) => {
     const { id: messageId } = req.params;
     const userId = req.user._id;
 
-    // Find the message and check permissions
     const message = await Message.findById(messageId);
     
     if (!message) {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    // Enhanced permission logic for tagged messages
     const isCreator = message.senderId.toString() === userId.toString();
     const isReceiver = message.receiverId.toString() === userId.toString();
     const isTaggedMessage = message.tag !== null;
     
     if (isTaggedMessage) {
-      // For tagged messages: both participants can delete (configurable)
-      const allowBothUsersToDelete = true; // This could be a user setting in the future
+      const allowBothUsersToDelete = true;
       
       if (allowBothUsersToDelete) {
-        // Both sender and receiver can delete tagged messages
         if (!isCreator && !isReceiver) {
           return res.status(403).json({ error: "You can only delete messages from your conversations" });
         }
       } else {
-        // Only creator can delete
         if (!isCreator) {
           return res.status(403).json({ error: "Only the creator can delete this tagged message" });
         }
       }
     } else {
-      // For regular messages: only creator can delete
       if (!isCreator) {
         return res.status(403).json({ error: "You can only delete your own messages" });
       }
     }
 
-    // Delete the message
     await Message.findByIdAndDelete(messageId);
     
-    // Real-time sync: emit deletion event to both users
     const io = getIO();
     const receiverSocketId = getReceiverSocketId(message.receiverId.toString());
     const senderSocketId = getReceiverSocketId(message.senderId.toString());
@@ -280,7 +273,6 @@ export const deleteMessage = async (req, res) => {
       tag: message.tag
     };
     
-    // Emit to both participants
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("messageDeleted", deletionData);
     }

@@ -1,23 +1,19 @@
 import User from "../models/user.model.js";
 
-// Search users by username
 export const searchUsers = async (req, res) => {
   try {
-    // Get search query
     const { query } = req.query;
     
-    // If there's a search query and we're authenticated, try to search DB first
     if (query && req.user) {
       const dbUsers = await User.find({
         $or: [
           { username: { $regex: query, $options: "i" } },
           { fullName: { $regex: query, $options: "i" } }
         ],
-        _id: { $ne: req.user._id } // Exclude the current user
+        _id: { $ne: req.user._id }
       }).select("username fullName profilePic");
       
       if (dbUsers.length > 0) {
-        // Process database users to add relationship flags
         const usersWithFlags = await Promise.all(dbUsers.map(async (user) => {
           const userId = user._id.toString();
           const currentUser = await User.findById(req.user._id);
@@ -37,10 +33,8 @@ export const searchUsers = async (req, res) => {
       }
     }
     
-    // Return empty array if no users found
     const users = [];
     
-    // If a query is provided, filter the users
     let results = users;
     if (query) {
       const lowercaseQuery = query.toLowerCase();
@@ -50,7 +44,6 @@ export const searchUsers = async (req, res) => {
       );
     }
     
-    // Add relationship flags for frontend
     const usersWithFlags = results.map(user => ({
       ...user,
       isAlreadyFriend: false,
@@ -66,7 +59,6 @@ export const searchUsers = async (req, res) => {
   }
 };
 
-// Search existing friends
 export const searchFriends = async (req, res) => {
   try {
     const { query } = req.query;
@@ -75,7 +67,6 @@ export const searchFriends = async (req, res) => {
       return res.status(400).json({ error: "Search query is required" });
     }
     
-    // Find the current user with populated friends
     const user = await User.findById(req.user._id)
       .populate({
         path: "friends",
@@ -99,16 +90,11 @@ export const searchFriends = async (req, res) => {
   }
 };
 
-// Send a friend request
 export const sendFriendRequest = async (req, res) => {
   try {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
     
-
-    
-
-    // Check if users exist
     const [sender, receiver] = await Promise.all([
       User.findById(senderId),
       User.findById(receiverId)
@@ -123,12 +109,10 @@ export const sendFriendRequest = async (req, res) => {
       return res.status(404).json({ error: "Receiver not found" });
     }
     
-    // Check if they are already friends
     if (sender.friends.includes(receiverId)) {
       return res.status(400).json({ error: "Already friends with this user" });
     }
     
-    // Check if a request is already sent
     const alreadySent = sender.sentRequests.some(
       request => request.to.toString() === receiverId
     );
@@ -137,23 +121,18 @@ export const sendFriendRequest = async (req, res) => {
       return res.status(400).json({ error: "Friend request already sent" });
     }
     
-    // Check if the receiver has already sent a request to the sender
     const hasReceivedRequest = sender.friendRequests.some(
       request => request.from.toString() === receiverId
     );
     
     if (hasReceivedRequest) {
-      // If there's already a request from the receiver, accept it instead
       return acceptFriendRequest(req, res);
     }
     
-    // Add request to sender's sentRequests
     sender.sentRequests.push({ to: receiverId });
     
-    // Add request to receiver's friendRequests
     receiver.friendRequests.push({ from: senderId });
     
-    // Save both users
     await Promise.all([sender.save(), receiver.save()]);
     
     return res.status(200).json({ message: "Friend request sent successfully" });
@@ -163,13 +142,11 @@ export const sendFriendRequest = async (req, res) => {
   }
 };
 
-// Accept a friend request
 export const acceptFriendRequest = async (req, res) => {
   try {
     const { id: senderId } = req.params;
     const receiverId = req.user._id;
     
-    // Check if users exist
     const [sender, receiver] = await Promise.all([
       User.findById(senderId),
       User.findById(receiverId)
@@ -179,7 +156,6 @@ export const acceptFriendRequest = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     
-    // Check if there is a pending request
     const requestIndex = receiver.friendRequests.findIndex(
       request => request.from.toString() === senderId
     );
@@ -188,10 +164,8 @@ export const acceptFriendRequest = async (req, res) => {
       return res.status(400).json({ error: "No pending friend request from this user" });
     }
     
-    // Remove from friendRequests array
     receiver.friendRequests.splice(requestIndex, 1);
     
-    // Remove from sentRequests array of the sender
     const sentRequestIndex = sender.sentRequests.findIndex(
       request => request.to.toString() === receiverId
     );
@@ -200,7 +174,6 @@ export const acceptFriendRequest = async (req, res) => {
       sender.sentRequests.splice(sentRequestIndex, 1);
     }
     
-    // Add to friends array for both users
     if (!receiver.friends.includes(senderId)) {
       receiver.friends.push(senderId);
     }
@@ -209,7 +182,6 @@ export const acceptFriendRequest = async (req, res) => {
       sender.friends.push(receiverId);
     }
     
-    // Save both users
     await Promise.all([sender.save(), receiver.save()]);
     
     return res.status(200).json({ message: "Friend request accepted" });
@@ -219,20 +191,17 @@ export const acceptFriendRequest = async (req, res) => {
   }
 };
 
-// Reject a friend request
 export const rejectFriendRequest = async (req, res) => {
   try {
     const { id: senderId } = req.params;
     const receiverId = req.user._id;
     
-    // Find the receiver
     const receiver = await User.findById(receiverId);
     
     if (!receiver) {
       return res.status(404).json({ error: "User not found" });
     }
     
-    // Check if there is a pending request
     const requestIndex = receiver.friendRequests.findIndex(
       request => request.from.toString() === senderId
     );
@@ -241,11 +210,9 @@ export const rejectFriendRequest = async (req, res) => {
       return res.status(400).json({ error: "No pending friend request from this user" });
     }
     
-    // Remove from friendRequests array
     receiver.friendRequests.splice(requestIndex, 1);
     await receiver.save();
     
-    // Also remove from sentRequests of the sender
     const sender = await User.findById(senderId);
     if (sender) {
       const sentRequestIndex = sender.sentRequests.findIndex(
@@ -265,10 +232,8 @@ export const rejectFriendRequest = async (req, res) => {
   }
 };
 
-// Get all friend requests
 export const getFriendRequests = async (req, res) => {
   try {
-    // Find the user and populate the friendRequests
     const user = await User.findById(req.user._id)
       .populate({
         path: "friendRequests.from",
@@ -279,7 +244,6 @@ export const getFriendRequests = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     
-    // Format the response
     const formattedRequests = user.friendRequests.map(request => ({
       _id: request._id,
       user: request.from,
@@ -293,10 +257,8 @@ export const getFriendRequests = async (req, res) => {
   }
 };
 
-// Get all friends
 export const getFriends = async (req, res) => {
   try {
-    // Find the user and populate friends
     const user = await User.findById(req.user._id)
       .populate({
         path: "friends",
@@ -307,13 +269,10 @@ export const getFriends = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
     
-    // Import Message model for aggregation
     const Message = (await import("../models/message.model.js")).default;
     
-    // Get the last message timestamp for each friend to sort by recent interaction
     const friendsWithLastMessage = await Promise.all(
       user.friends.map(async (friend) => {
-        // Find the most recent message between current user and this friend
         const lastMessage = await Message.findOne({
           $or: [
             { senderId: req.user._id, receiverId: friend._id },
@@ -325,17 +284,15 @@ export const getFriends = async (req, res) => {
         
         return {
           ...friend.toObject(),
-          lastMessageAt: lastMessage ? lastMessage.createdAt : new Date(0) // Use epoch time if no messages
+          lastMessageAt: lastMessage ? lastMessage.createdAt : new Date(0)
         };
       })
     );
     
-    // Sort friends by most recent interaction (lastMessageAt descending)
     const sortedFriends = friendsWithLastMessage.sort((a, b) => {
       return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
     });
     
-    // Remove the lastMessageAt field before sending to client (it was just for sorting)
     const friendsResponse = sortedFriends.map(friend => {
       const { lastMessageAt, ...friendData } = friend;
       return friendData;

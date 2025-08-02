@@ -16,7 +16,6 @@ const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState(null);
 
-  // Load friends and requests on component mount
   useEffect(() => {
     loadFriends().catch(err => {
       console.error("Could not load friends:", err);
@@ -40,12 +39,10 @@ const Sidebar = () => {
     }
   };
   
-  // Handle search
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       if (searchQuery) {
         searchFriends(searchQuery).catch(() => {
-          // Search error is already handled in the store with toast
         });
       }
     }, 500);
@@ -90,7 +87,6 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* Search friends */}
         <div className="mt-3 relative">
           <div className="relative">
             <input
@@ -104,7 +100,6 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* Online filter toggle */}
         <div className="mt-3 flex items-center justify-between">
           <label className="cursor-pointer flex items-center gap-2">
             <input
@@ -167,7 +162,6 @@ const Sidebar = () => {
                 )}
               </div>
 
-              {/* User info - responsive to container width */}
               <div className="text-left min-w-0 flex-1">
                 <div className="font-medium truncate text-sm">{user.fullName}</div>
                 <div className="text-xs text-zinc-400 truncate">

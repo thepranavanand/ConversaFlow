@@ -5,22 +5,20 @@ const ImageWithFallback = ({ src, fallbackSrc, alt, className, onError }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // If we have a real URL and a fallback blob URL, preload the real image
     if (src && fallbackSrc && src !== fallbackSrc && !src.startsWith('blob:')) {
       setIsLoading(true);
       
       const img = new Image();
       img.onload = () => {
-        setImageSrc(src); // Switch to real URL once loaded
+        setImageSrc(src);
         setIsLoading(false);
       };
       img.onerror = () => {
-        setImageSrc(fallbackSrc); // Keep using blob URL if real URL fails
+        setImageSrc(fallbackSrc);
         setIsLoading(false);
       };
       img.src = src;
       
-      // Start with fallback while loading
       setImageSrc(fallbackSrc);
     } else {
       setImageSrc(src);

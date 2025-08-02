@@ -8,11 +8,9 @@ const ChatHeader = () => {
   const { onlineUsers, getUserProfilePic, socket, userProfiles, authUser } = useAuthStore();
   const [profilePic, setProfilePic] = useState("/avatar.png");
 
-  // Keep profile picture updated when changes occur
   useEffect(() => {
     if (!selectedUser || !selectedUser._id) return;
     
-    // Access profile pic from multiple sources for reliability
     const userId = selectedUser._id;
     const picSource = userProfiles[userId] || selectedUser.profilePic || "/avatar.png";
     
@@ -21,7 +19,6 @@ const ChatHeader = () => {
     
   }, [selectedUser, userProfiles]);
 
-  // Listen for profile updates specific to this user
   useEffect(() => {
     if (!socket || !selectedUser) return;
 
@@ -46,7 +43,6 @@ const ChatHeader = () => {
     <div className="p-2.5 border-b border-base-300">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Avatar */}
           <div className="avatar">
             <div className="size-10 rounded-full relative">
               <img 
@@ -60,7 +56,6 @@ const ChatHeader = () => {
             </div>
           </div>
 
-          {/* User info */}
           <div>
             <h3 className="font-medium">{selectedUser?.fullName}</h3>
             <p className="text-sm text-base-content/70">
@@ -69,7 +64,6 @@ const ChatHeader = () => {
           </div>
         </div>
 
-        {/* Close button */}
         <button onClick={() => setSelectedUser(null)}>
           <X />
         </button>

@@ -10,7 +10,6 @@ const Conversation = ({ conversation }) => {
   const isOnline = onlineUsers.includes(conversation._id);
   const isSelected = selectedUser?._id === conversation._id;
   
-  // Ensure profile picture is always up to date
   useEffect(() => {
     if (!conversation || !conversation._id) return;
     
@@ -28,7 +27,6 @@ const Conversation = ({ conversation }) => {
       `}
       onClick={() => setSelectedUser(conversation)}
     >
-      {/* Avatar */}
       <div className="avatar">
         <div className="size-10 rounded-full relative">
           <img 
@@ -47,7 +45,6 @@ const Conversation = ({ conversation }) => {
         </div>
       </div>
 
-      {/* User info */}
       <div>
         <h3 className="font-medium">{conversation.fullName}</h3>
         <p className="text-sm text-base-content/70">{isOnline ? "Online" : "Offline"}</p>

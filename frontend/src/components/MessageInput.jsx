@@ -5,11 +5,9 @@ import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 
-const MAX_MESSAGE_CHARS = 500; // ~100 words
-const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB for images
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB for files
-const IMAGE_QUALITY = 0.8; // Compression quality for images
-const MAX_IMAGE_DIMENSION = 1920; // Max width/height for image compression
+const MAX_MESSAGE_CHARS = 500;
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 const MessageInput = () => {
   const [text, setText] = useState("");
@@ -20,119 +18,57 @@ const MessageInput = () => {
   const [charsLeft, setCharsLeft] = useState(MAX_MESSAGE_CHARS);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState([]);
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const fileInputRef = useRef(null);
   const formRef = useRef(null);
   const inputRef = useRef(null);
-  const { sendMessage, selectedUser, replyingTo, cancelReply, addOptimisticMessage, updateMessageStatus, removeOptimisticMessage } = useChatStore();
+  const { sendMessage, selectedUser, replyingTo, cancelReply } = useChatStore();
 
-  // Function to compress image
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions while maintaining aspect ratio
-        let { width, height } = img;
-        const maxDim = MAX_IMAGE_DIMENSION;
-        
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = (height * maxDim) / width;
-            width = maxDim;
-          } else {
-            width = (width * maxDim) / height;
-            height = maxDim;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(resolve, 'image/jpeg', IMAGE_QUALITY);
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
+  const availableTags = ['task', 'decision', 'deadline', 'defer', 'confirm', 'wait', 'done', 'fail', 'abort', 'retry'];
 
-  const availableTags = ['taskRequest', 'statusUpdate', 'clarificationNeeded', 'deadlineReminder', 'bugReport', 'messageAcknowledged', 'urgentNotice', 'meetingSchedule', 'infoSharing', 'workFeedback'];
-
-  const getTagDisplayName = (tag) => {
-    const tagDisplayNames = {
-      taskRequest: 'Task Request',
-      statusUpdate: 'Status Update',
-      clarificationNeeded: 'Clarification Needed',
-      deadlineReminder: 'Deadline Reminder',
-      bugReport: 'Bug Report',
-      messageAcknowledged: 'Message Acknowledged',
-      urgentNotice: 'Urgent Notice',
-      meetingSchedule: 'Meeting Schedule',
-      infoSharing: 'Info Sharing',
-      workFeedback: 'Work Feedback'
-    };
-    return tagDisplayNames[tag] || tag;
-  };
-
-  // Function to check if message has a tag and get display text with highlighting
   const getDisplayText = () => {
-    const existingTagPattern = /@(taskRequest|statusUpdate|clarificationNeeded|deadlineReminder|bugReport|messageAcknowledged|urgentNotice|meetingSchedule|infoSharing|workFeedback)(?:\s*\[([^\]]*)\])?/;
+    const existingTagPattern = /@(task|decision|deadline|defer|confirm|wait|done|fail|abort|retry)(?:\s*\[([^\]]*)\])?/;
     const match = text.match(existingTagPattern);
     
     if (match) {
-      // There's a tag, we need to show it highlighted
-      return text; // We'll handle highlighting in CSS
+      return text;
     }
     return text;
   };
 
   const hasExistingTag = () => {
-    const existingTagPattern = /@(taskRequest|statusUpdate|clarificationNeeded|deadlineReminder|bugReport|messageAcknowledged|urgentNotice|meetingSchedule|infoSharing|workFeedback)(?:\s*\[([^\]]*)\])?/;
+    const existingTagPattern = /@(task|decision|deadline|defer|confirm|wait|done|fail|abort|retry)(?:\s*\[([^\]]*)\])?/;
     return existingTagPattern.test(text);
   };
 
-  // Auto-focus input field when replying to a message
   useEffect(() => {
     if (replyingTo && inputRef.current) {
       inputRef.current.focus();
     }
   }, [replyingTo]);
 
-  // Update character count when text changes
   useEffect(() => {
     setCharsLeft(MAX_MESSAGE_CHARS - text.length);
     
-    // Check if there's already a tag in the message
-    const existingTagPattern = /@(taskRequest|statusUpdate|clarificationNeeded|deadlineReminder|bugReport|messageAcknowledged|urgentNotice|meetingSchedule|infoSharing|workFeedback)(?:\s*\[([^\]]*)\])?/;
+    const existingTagPattern = /@(task|decision|deadline|defer|confirm|wait|done|fail|abort|retry)(?:\s*\[([^\]]*)\])?/;
     const hasExistingTag = existingTagPattern.test(text);
     
     if (hasExistingTag) {
-      // If there's already a tag, don't show suggestions
       setShowTagSuggestions(false);
       setTagSuggestions([]);
-      setSelectedSuggestionIndex(0);
     } else {
-      // Check for @ symbol and show tag suggestions only if no tag exists
       const words = text.split(' ');
       const currentWord = words[words.length - 1];
       
       if (currentWord.startsWith('@') && currentWord.length > 1) {
         const query = currentWord.slice(1).toLowerCase();
         const filtered = availableTags.filter(tag => 
-          tag.toLowerCase().includes(query) || 
-          getTagDisplayName(tag).toLowerCase().includes(query)
+          tag.toLowerCase().includes(query)
         );
         setTagSuggestions(filtered);
         setShowTagSuggestions(filtered.length > 0);
-        setSelectedSuggestionIndex(0); // Reset to first suggestion
       } else {
         setShowTagSuggestions(false);
         setTagSuggestions([]);
-        setSelectedSuggestionIndex(0);
       }
     }
   }, [text]);
@@ -142,55 +78,13 @@ const MessageInput = () => {
     words[words.length - 1] = `@${tag}`;
     setText(words.join(' ') + ' ');
     setShowTagSuggestions(false);
-    setSelectedSuggestionIndex(0);
     inputRef.current?.focus();
   };
 
-  const insertSelectedTag = () => {
-    if (tagSuggestions.length > 0 && selectedSuggestionIndex < tagSuggestions.length) {
-      insertTag(tagSuggestions[selectedSuggestionIndex]);
-    }
-  };
-
   const handleKeyDown = (e) => {
-    // Handle tag suggestion navigation
-    if (showTagSuggestions && tagSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
-          prev < tagSuggestions.length - 1 ? prev + 1 : 0
-        );
-        return;
-      }
-      
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
-          prev > 0 ? prev - 1 : tagSuggestions.length - 1
-        );
-        return;
-      }
-      
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        insertSelectedTag();
-        return;
-      }
-      
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setShowTagSuggestions(false);
-        setTagSuggestions([]);
-        setSelectedSuggestionIndex(0);
-        return;
-      }
-    }
-    
-    // If Enter is pressed without Shift, submit the form
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       
-      // Allow sending if there's text OR if there's a file/image (even with empty text)
       if (text.trim() || selectedFile) {
         console.log('Enter key pressed, submitting with reply context:', replyingTo?._id);
         formRef.current.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
@@ -209,7 +103,6 @@ const MessageInput = () => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Check file size limits
     if (file.type.startsWith("image/")) {
       if (file.size > MAX_IMAGE_SIZE) {
         toast.error(`Image too large. Maximum size is ${MAX_IMAGE_SIZE / (1024 * 1024)}MB`);
@@ -222,31 +115,13 @@ const MessageInput = () => {
 
     setSelectedFile(file);
     
-    // Auto-focus the text input when a file is selected
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-    
-    // If it's an image, compress it and show preview
     if (file.type.startsWith("image/")) {
-      // Show immediate preview of original file first
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
-      
-      // Then compress in background
-      compressImage(file).then(compressedFile => {
-        // Update the selected file with compressed version
-        setSelectedFile(compressedFile);
-        // Keep the same preview (user won't notice compression)
-      }).catch(error => {
-        console.error("Error compressing image:", error);
-        toast.error("Failed to process image");
-      });
     } else {
-      // Clear image preview if it's not an image
       setImagePreview(null);
     }
   };
@@ -266,13 +141,12 @@ const MessageInput = () => {
         return;
       }
       
-      if (!text.trim() && !selectedFile) {
+      if (!text && !selectedFile) {
         return;
       }
 
       setIsUploading(true);
       
-      // Get current user ID
       const { authUser } = useAuthStore.getState();
       
       if (!authUser || !authUser._id) {
@@ -280,34 +154,13 @@ const MessageInput = () => {
         return;
       }
       
-      // Log if we're replying to a message
       if (replyingTo) {
         console.log('Replying to message:', replyingTo._id, replyingTo.text);
       }
       
-      // Handle image uploads via Cloudinary (base64)
       if (selectedFile && selectedFile.type.startsWith("image/")) {
         console.log('Uploading image via Cloudinary:', selectedFile.name);
         
-        // Create blob URL for immediate display
-        const blobUrl = URL.createObjectURL(selectedFile);
-        
-        // Add optimistic message immediately
-        const tempId = addOptimisticMessage({
-          text: text || '',
-          image: blobUrl, // Use blob URL for immediate display
-          replyTo: replyingTo?._id || null,
-          receiverId: selectedUser._id
-        });
-        
-        // Reset form immediately (optimistic UX)
-        setText("");
-        setSelectedFile(null);
-        setImagePreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        useChatStore.setState((state) => ({ replyingTo: null }));
-        
-        // Convert image to base64 and upload in background
         const reader = new FileReader();
         reader.onloadend = async () => {
           try {
@@ -315,7 +168,7 @@ const MessageInput = () => {
             
             const messageData = {
               text: text || '',
-              image: reader.result, // base64 string
+              image: reader.result,
               replyTo: replyingTo?._id || null
             };
             
@@ -333,33 +186,20 @@ const MessageInput = () => {
             
             console.log('Image message sent successfully:', response.data);
             
-                      // Update optimistic message with real message data
-          updateMessageStatus(tempId, 'sent', response.data);
-          
-            // Refresh friends list to update order after sending image
-            // Add delay to ensure message is saved to database first
-            setTimeout(() => {
-              import("../store/useFriendStore.js").then(({ useFriendStore }) => {
-                const { getFriends } = useFriendStore.getState();
-                getFriends().catch(err => {
-                  console.log("Failed to refresh friends order after sending image:", err);
-                });
-              });
-            }, 100);
+            useChatStore.setState((state) => ({
+              messages: [...state.messages, response.data],
+              replyingTo: null
+            }));
             
-            // Clean up blob URL after a small delay to prevent flash
-            setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
-            }, 1000);
+            setText("");
+            setSelectedFile(null);
+            setImagePreview(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
             
           } catch (error) {
             console.error("Error sending image:", error);
             console.error("Error details:", error.response?.data);
             toast.error("Failed to send image: " + (error.response?.data?.error || error.message));
-            
-            // Remove failed optimistic message
-            removeOptimisticMessage(tempId);
-            URL.revokeObjectURL(blobUrl);
           } finally {
             setIsUploading(false);
           }
@@ -368,15 +208,12 @@ const MessageInput = () => {
         reader.onerror = () => {
           console.error("Error reading image file");
           toast.error("Failed to read image file");
-          removeOptimisticMessage(tempId);
-          URL.revokeObjectURL(blobUrl);
           setIsUploading(false);
         };
         
         reader.readAsDataURL(selectedFile);
-        return; // Exit early for image upload
+        return;
       } 
-      // Handle file uploads via GridFS
       else if (selectedFile) {
         console.log('Uploading file via GridFS:', selectedFile.name);
 
@@ -410,22 +247,10 @@ const MessageInput = () => {
           
           console.log('File uploaded successfully:', response.data);
           
-          // Update messages in store
           useChatStore.setState((state) => ({
             messages: [...state.messages, response.data],
             replyingTo: null
           }));
-          
-          // Refresh friends list to update order after sending file
-          // Add delay to ensure message is saved to database first
-          setTimeout(() => {
-            import("../store/useFriendStore.js").then(({ useFriendStore }) => {
-              const { getFriends } = useFriendStore.getState();
-              getFriends().catch(err => {
-                console.log("Failed to refresh friends order after sending file:", err);
-              });
-            });
-          }, 100);
           
         } catch (error) {
           console.error("Error uploading file:", error);
@@ -435,29 +260,15 @@ const MessageInput = () => {
           throw error;
         }
       }
-      // Text-only message
       else if (text) {
-        console.log("Sending text-only message");
-        
-        // Add optimistic message immediately
-        const tempId = addOptimisticMessage({
-          text: text,
-          replyTo: replyingTo?._id || null,
-          receiverId: selectedUser._id
-        });
-        
-        // Reset form immediately (optimistic UX)
-        const currentText = text;
-        const currentReplyTo = replyingTo;
-        setText("");
-        useChatStore.setState((state) => ({ replyingTo: null }));
-        
         try {
-          const formData = new FormData();
-          formData.append('text', currentText);
+          console.log("Sending text-only message");
           
-          if (currentReplyTo) {
-            formData.append('replyTo', currentReplyTo._id);
+          const formData = new FormData();
+          formData.append('text', text);
+          
+          if (replyingTo) {
+            formData.append('replyTo', replyingTo._id);
           }
           
           const response = await axiosInstance.post(
@@ -472,31 +283,18 @@ const MessageInput = () => {
           
           console.log("Message sent successfully:", response.data);
           
-          // Update optimistic message with real message data
-          updateMessageStatus(tempId, 'sent', response.data);
-          
-          // Refresh friends list to update order after sending text message
-          // Add delay to ensure message is saved to database first
-          setTimeout(() => {
-            import("../store/useFriendStore.js").then(({ useFriendStore }) => {
-              const { getFriends } = useFriendStore.getState();
-              getFriends().catch(err => {
-                console.log("Failed to refresh friends order after sending text:", err);
-              });
-            });
-          }, 100);
+          useChatStore.setState((state) => ({
+            messages: [...state.messages, response.data],
+            replyingTo: null
+          }));
           
         } catch (error) {
           console.error("Error sending text message:", error);
           toast.error("Failed to send message: " + (error.response?.data?.error || error.message));
-          
-          // Remove failed optimistic message
-          removeOptimisticMessage(tempId);
           throw error;
         }
       }
       
-      // Reset form for text and file uploads (image is handled above)
       if (!selectedFile || !selectedFile.type.startsWith("image/")) {
         setText("");
         setSelectedFile(null);
@@ -513,7 +311,6 @@ const MessageInput = () => {
     }
   };
 
-  // Function to get the appropriate file icon based on file type
   const getFileIcon = () => {
     if (!selectedFile) return <Upload size={20} />;
     
@@ -524,7 +321,6 @@ const MessageInput = () => {
     }
   };
   
-  // Only show attachments preview if a file is selected
   const renderAttachmentPreview = () => {
     if (!selectedFile) return null;
     
@@ -562,7 +358,6 @@ const MessageInput = () => {
     );
   };
 
-  // Render reply preview if replying to a message
   const renderReplyPreview = () => {
     if (!replyingTo) return null;
     
@@ -590,31 +385,36 @@ const MessageInput = () => {
   };
 
   return (
-          <form ref={formRef} onSubmit={handleSendMessage} className="p-2 border-t dark:border-gray-700 relative">
+    <form ref={formRef} onSubmit={handleSendMessage} className="p-2 border-t dark:border-gray-700 relative">
       {renderReplyPreview()}
       {renderAttachmentPreview()}
 
-      {/* Tag Suggestions */}
       {showTagSuggestions && (
         <div className="absolute bottom-full left-2 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-w-xs">
-          {tagSuggestions.map((tag, index) => (
+          <div className="p-2 text-xs text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+            Tag suggestions:
+          </div>
+          {tagSuggestions.map(tag => (
             <button
               key={tag}
               type="button"
               onClick={() => insertTag(tag)}
-              className={`w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 first:rounded-t-lg last:rounded-b-lg ${
-                index === selectedSuggestionIndex 
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
             >
-              @{getTagDisplayName(tag)}
+              @{tag}
             </button>
           ))}
         </div>
       )}
 
-
+      {isUploading && (
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2 dark:bg-gray-700">
+          <div 
+            className="h-full bg-blue-500 rounded-full transition-all duration-300"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      )}
     
       <div className="relative flex flex-col">
         <div className="relative flex items-center">
@@ -661,7 +461,6 @@ const MessageInput = () => {
           </button>
         </div>
         
-        {/* Character counter */}
         <div className={`text-xs text-right mt-1 ${charsLeft < 50 ? 'text-amber-500' : charsLeft < 20 ? 'text-red-500' : 'text-gray-400'}`}>
           {charsLeft} characters left
         </div>

@@ -5,10 +5,6 @@ import { File, Download, Reply, Trash2, CornerUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getBaseUrl } from "../lib/axios";
 import toast from "react-hot-toast";
-import MessageStatus from "./MessageStatus";
-import SendingImageMessage from "./SendingImageMessage";
-import SendingTextMessage from "./SendingTextMessage";
-import ImageWithFallback from "./ImageWithFallback";
 
 const Message = ({ message, messageEndRef }) => {
   const { authUser, userProfiles } = useAuthStore();
@@ -25,62 +21,40 @@ const Message = ({ message, messageEndRef }) => {
                    (message.senderId?.toString() === authUser._id?.toString()) ||
                    (message.senderId?._id?.toString() === authUser._id?.toString());
 
-  // Mark message as read when it comes into view (for incoming messages)
   useEffect(() => {
-    if (!isOwnMessage && message._id && !message._id.startsWith('temp_')) {
-      const socket = useAuthStore.getState().socket;
-      if (socket) {
-        // Mark message as read
-        socket.emit("markMessageRead", message._id);
-      }
-    }
-  }, [message._id, isOwnMessage]);
-
-  useEffect(() => {
-    // Debug the message object to understand its structure (development only)
-    if (process.env.NODE_ENV === 'development') {
-      console.log("[Message Debug]", { 
-        messageId: message._id,
-        senderId: message.senderId,
-        senderIdId: message.senderId?._id,
-        senderIdType: typeof message.senderId,
-        authUserId: authUser._id,
-        authUserIdType: typeof authUser._id,
-        isOwn: message.senderId === authUser._id,
-        isOwnId: message.senderId?._id === authUser._id,
-        isOwnString: message.senderId?.toString() === authUser._id?.toString(),
-        finalIsOwn: isOwnMessage,
-        message: message
-      });
-    }
+    console.log("[Message Debug]", { 
+      messageId: message._id,
+      senderId: message.senderId,
+      senderIdId: message.senderId?._id,
+      senderIdType: typeof message.senderId,
+      authUserId: authUser._id,
+      authUserIdType: typeof authUser._id,
+      isOwn: message.senderId === authUser._id,
+      isOwnId: message.senderId?._id === authUser._id,
+      isOwnString: message.senderId?.toString() === authUser._id?.toString(),
+      finalIsOwn: isOwnMessage,
+      message: message
+    });
   }, [message, authUser]);
 
-  // Function to ensure image path has the correct URL prefix
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     
     const BASE_URL = getBaseUrl();
     
-    // Already a Cloudinary or absolute URL
     if (imagePath.startsWith('http')) return imagePath;
     
-    // Local uploads path - fix double slash issue
     if (imagePath.startsWith('/uploads/')) {
-      // Remove any double slashes that might occur
       const cleanPath = imagePath.replace(/\/+/g, '/');
       return `${BASE_URL}${cleanPath}`;
     }
     
-    // Without leading slash
     if (imagePath.startsWith('uploads/')) return `${BASE_URL}/uploads/${imagePath.substring(8)}`;
     
-    // Plain filename - assume it's in uploads
     return `${BASE_URL}/uploads/${imagePath}`;
   };
   
-  // Set up sender profile and image URLs
   useEffect(() => {
-    // Set up profile info
     const senderId = message.senderId?._id || message.senderId;
     const senderData = message.senderId;
     const profile = {
@@ -88,24 +62,19 @@ const Message = ({ message, messageEndRef }) => {
       name: "User"
     };
 
-    // Handle own messages
     if (senderId === authUser._id || senderId?.toString() === authUser._id?.toString()) {
       profile.pic = authUser.profilePic || "/avatar.png";
       profile.name = authUser.fullName || "You";
     } 
-    // Handle others' messages - check if senderId is populated
     else if (senderData && typeof senderData === 'object' && senderData.fullName) {
-      // SenderId is populated with user data
       profile.pic = senderData.profilePic || "/avatar.png";
       profile.name = senderData.fullName || "User";
     }
-    // Handle others' messages - senderId is just an ID
     else if (selectedUser && (selectedUser._id === senderId || selectedUser._id?.toString() === senderId?.toString())) {
       profile.pic = selectedUser.profilePic || "/avatar.png";
       profile.name = selectedUser.fullName || "User";
     }
 
-    // Try userProfiles as fallback
     if (profile.pic === "/avatar.png" && userProfiles[senderId]) {
       profile.pic = userProfiles[senderId];
     }
@@ -113,7 +82,6 @@ const Message = ({ message, messageEndRef }) => {
     console.log(`[Message] Setting sender profile for message ${message._id}:`, profile);
     setSenderProfile(profile);
     
-    // Set up image URL if it exists
     if (message.image) {
       const url = getImageUrl(message.image);
       console.log(`[Message] Setting image URL for message ${message._id}: ${message.image} -> ${url}`);
@@ -145,7 +113,6 @@ const Message = ({ message, messageEndRef }) => {
     setReplyingTo(message);
     setIsMenuOpen(false);
     
-    // Explicitly focus the input field
     setTimeout(() => {
       const inputField = document.querySelector('form input[type="text"]');
       if (inputField) {
@@ -161,40 +128,23 @@ const Message = ({ message, messageEndRef }) => {
 
   const getTagStyle = (tag) => {
     const tagStyles = {
-      taskRequest: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      statusUpdate: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      clarificationNeeded: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      deadlineReminder: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      bugReport: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      messageAcknowledged: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      urgentNotice: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-      meetingSchedule: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      infoSharing: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      workFeedback: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+      task: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      decision: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+      deadline: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      defer: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      confirm: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      wait: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      done: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+      fail: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      abort: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      retry: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
     };
     return tagStyles[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-  };
-
-  const getTagDisplayName = (tag) => {
-    const tagDisplayNames = {
-      taskRequest: 'Task Request',
-      statusUpdate: 'Status Update',
-      clarificationNeeded: 'Clarification Needed',
-      deadlineReminder: 'Deadline Reminder',
-      bugReport: 'Bug Report',
-      messageAcknowledged: 'Message Acknowledged',
-      urgentNotice: 'Urgent Notice',
-      meetingSchedule: 'Meeting Schedule',
-      infoSharing: 'Info Sharing',
-      workFeedback: 'Work Feedback'
-    };
-    return tagDisplayNames[tag] || tag;
   };
 
   const cleanMessageText = (text, tag) => {
     if (!text || !tag) return text;
     
-    // Remove the tag pattern from the message text
     const tagPattern = new RegExp(`@${tag}(?:\\s*\\[([^\\]]*)\\])?`, 'g');
     return text.replace(tagPattern, '').trim();
   };
@@ -226,7 +176,6 @@ const Message = ({ message, messageEndRef }) => {
         </time>
       </div>
 
-      {/* Reply context display if this message is a reply */}
       {message.replyTo && (
         <div className={`chat-bubble mb-1 opacity-70 bg-base-200 dark:bg-gray-700 flex items-center text-sm ${isOwnMessage ? "chat-bubble-primary bg-primary/30" : ""}`}>
           <CornerUpRight size={14} className="mr-2 text-primary" />
@@ -238,63 +187,47 @@ const Message = ({ message, messageEndRef }) => {
         </div>
       )}
 
-      {message.text && !(message.status === 'sending' && message.isOptimistic && message.image) && (
-        <>
-          {message.status === 'sending' && message.isOptimistic && !message.image ? (
-            <SendingTextMessage text={message.text} />
-          ) : (
-            <div className="chat-bubble max-w-xs sm:max-w-sm md:max-w-md break-words text-sm leading-relaxed">
-              <div>{message.tag ? cleanMessageText(message.text, message.tag) : message.text}</div>
-              {message.tag && (
-                <div className="mt-2">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTagStyle(message.tag)}`}>
-                      @{getTagDisplayName(message.tag)}
-                    {message.metadata && Object.keys(message.metadata).length > 0 && 
-                     Object.entries(message.metadata).filter(([key]) => key !== 'tag' && key !== 'timestamp').length > 0 && (
-                      <span className="ml-1 opacity-75 text-xs">
-                        [{Object.entries(message.metadata)
-                          .filter(([key]) => key !== 'tag' && key !== 'timestamp')
-                          .map(([key, value]) => `${key}:${value}`)
-                          .join(', ')}]
-                      </span>
-                    )}
+      {message.text && (
+        <div className="chat-bubble max-w-xs sm:max-w-sm md:max-w-md break-words text-sm leading-relaxed">
+          <div>{message.tag ? cleanMessageText(message.text, message.tag) : message.text}</div>
+          {message.tag && (
+            <div className="mt-2">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTagStyle(message.tag)}`}>
+                @{message.tag}
+                {message.metadata && Object.keys(message.metadata).length > 0 && 
+                 Object.entries(message.metadata).filter(([key]) => key !== 'tag' && key !== 'timestamp').length > 0 && (
+                  <span className="ml-1 opacity-75 text-xs">
+                    [{Object.entries(message.metadata)
+                      .filter(([key]) => key !== 'tag' && key !== 'timestamp')
+                      .map(([key, value]) => `${key}:${value}`)
+                      .join(', ')}]
                   </span>
-                </div>
-              )}
+                )}
+              </span>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {message.image && (
-        <>
-          {message.status === 'sending' && message.isOptimistic ? (
-            <SendingImageMessage imagePreview={message.image} text={message.text} />
-          ) : (
-            <div className="chat-bubble p-1">
-              <ImageWithFallback
-                src={imageUrl}
-                fallbackSrc={message.originalBlobUrl}
-                alt="message attachment"
-                className="rounded-lg max-w-full max-h-[300px]"
-                onError={(e) => {
-                  console.error(`[Message] Failed to load image: ${message.image} → ${imageUrl}`);
-                  
-                  // Try to fetch the image directly to see response
-                  fetch(imageUrl)
-                    .then(response => console.log(`[Message] Image fetch test: ${response.status} ${response.statusText}`))
-                    .catch(err => console.error(`[Message] Image fetch error: ${err}`));
-                  
-                  // Set a fallback image instead of just alt text
-                  e.target.src = "/avatar.png"; // Use a placeholder image
-                  e.target.classList.add("error-image");
-                  e.target.style.opacity = "0.6";
-                  e.target.style.maxHeight = "80px"; // Smaller fallback image
-                }}
-              />
-            </div>
-          )}
-        </>
+        <div className="chat-bubble p-1">
+          <img
+            src={imageUrl}
+            alt="message attachment"
+            className="rounded-lg max-w-full max-h-[300px]"
+            onError={(e) => {
+              console.error(`[Message] Failed to load image: ${message.image} → ${imageUrl}`);
+              fetch(imageUrl)
+                .then(response => console.log(`[Message] Image fetch test: ${response.status} ${response.statusText}`))
+                .catch(err => console.error(`[Message] Image fetch error: ${err}`));
+              
+              e.target.src = "/avatar.png";
+              e.target.classList.add("error-image");
+              e.target.style.opacity = "0.6";
+              e.target.style.maxHeight = "80px";
+            }}
+          />
+        </div>
       )}
 
       {message.file && (
@@ -317,10 +250,6 @@ const Message = ({ message, messageEndRef }) => {
         </div>
       )}
 
-      {/* Message Status */}
-      <MessageStatus status={message.status || 'sent'} isOwnMessage={isOwnMessage} />
-
-      {/* Message Actions Menu */}
       {isMenuOpen && (
         <div 
           className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-10 bg-base-100 dark:bg-gray-800 shadow-lg rounded-lg p-2 z-10 border dark:border-gray-700`}
@@ -346,7 +275,6 @@ const Message = ({ message, messageEndRef }) => {
         </div>
       )}
 
-      {/* Message action buttons that appear on hover */}
       <div className={`message-actions absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
         <button 
           onClick={handleReply}

@@ -33,7 +33,7 @@ const messageSchema = new mongoose.Schema(
     },
     tag: {
       type: String,
-      enum: ['taskRequest', 'statusUpdate', 'clarificationNeeded', 'deadlineReminder', 'bugReport', 'messageAcknowledged', 'urgentNotice', 'meetingSchedule', 'infoSharing', 'workFeedback'],
+      enum: ['task', 'decision', 'deadline', 'defer', 'confirm', 'wait', 'done', 'fail', 'abort', 'retry'],
       default: null
     },
     metadata: {
@@ -43,19 +43,6 @@ const messageSchema = new mongoose.Schema(
     linked_to: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
-      default: null
-    },
-    status: {
-      type: String,
-      enum: ['sending', 'sent', 'delivered', 'read'],
-      default: 'sent'
-    },
-    deliveredAt: {
-      type: Date,
-      default: null
-    },
-    readAt: {
-      type: Date,
       default: null
     }
   },

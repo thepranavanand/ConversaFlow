@@ -1,7 +1,6 @@
 import { Clock, Check, CheckCheck } from "lucide-react";
 
 const MessageStatus = ({ status, isOwnMessage }) => {
-  // Only show status for own messages
   if (!isOwnMessage) return null;
 
   const getStatusIcon = () => {

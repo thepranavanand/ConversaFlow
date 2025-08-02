@@ -16,26 +16,22 @@ const HomePage = () => {
   
   const containerRef = useRef(null);
 
-  // Load messages for selected user from localStorage
   useEffect(() => {
     if (selectedUser && selectedUser._id) {
       getMessages(selectedUser._id);
     }
   }, [selectedUser]);
 
-  // Handle sidebar resize
   const handleSidebarMouseDown = (e) => {
     setIsResizingSidebar(true);
     e.preventDefault();
   };
 
-  // Handle execution graph resize
   const handleGraphMouseDown = (e) => {
     setIsResizingGraph(true);
     e.preventDefault();
   };
 
-  // Handle mouse move for resizing
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!containerRef.current) return;
@@ -82,7 +78,6 @@ const HomePage = () => {
       <div className="flex items-center justify-center pt-20 px-4">
         <div className="bg-base-100 rounded-lg shadow-cl w-full max-w-full h-[calc(100vh-8rem)]">
           <div ref={containerRef} className="flex h-full rounded-lg overflow-hidden relative">
-            {/* Sidebar */}
             <div 
               style={{ width: `${sidebarWidth}px` }}
               className="flex-shrink-0 min-w-0 overflow-hidden"
@@ -90,13 +85,11 @@ const HomePage = () => {
               <Sidebar />
             </div>
 
-            {/* Sidebar Resize Handle */}
             <div
               className="w-1 bg-gray-200 dark:bg-gray-700 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
               onMouseDown={handleSidebarMouseDown}
             />
 
-            {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0">
               {!selectedUser ? (
                 <NoChatSelected />
@@ -108,7 +101,6 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* Execution Graph Resize Handle */}
             {showExecutionGraph && (
               <div
                 className="w-1 bg-gray-200 dark:bg-gray-700 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
@@ -116,7 +108,6 @@ const HomePage = () => {
               />
             )}
 
-            {/* Execution Graph Panel */}
             {showExecutionGraph && (
               <div 
                 style={{ width: `${executionGraphWidth}px` }}
@@ -126,7 +117,6 @@ const HomePage = () => {
               </div>
             )}
 
-            {/* Execution Graph Toggle - Vertical Bar */}
             {!showExecutionGraph && (
               <div className="w-8 bg-gray-100 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center flex-shrink-0">
                 <button

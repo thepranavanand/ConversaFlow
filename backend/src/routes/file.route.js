@@ -19,7 +19,7 @@ const upload = multer({
 
 // Function to parse tags from text (same as in message controller)
 function parseTags(text) {
-  const tagPattern = /@(taskRequest|statusUpdate|clarificationNeeded|deadlineReminder|bugReport|messageAcknowledged|urgentNotice|meetingSchedule|infoSharing|workFeedback)(?:\s*\[([^\]]*)\])?/;
+  const tagPattern = /@(task|decision|deadline|defer|confirm|wait|done|fail|abort|retry)(?:\s*\[([^\]]*)\])?/;
   const match = tagPattern.exec(text);
   
   if (match) {

@@ -305,40 +305,6 @@ chat-app/
 - **Input Sanitization** - XSS and injection prevention
 - **Environment Security** - Sensitive data isolation
 
-## 🚀 Deployment
-
-### Production Environment
-1. Set `NODE_ENV=production`
-2. Configure MongoDB Atlas or production MongoDB
-3. Set up Cloudinary production account
-4. Use strong JWT secrets (32+ characters)
-5. Configure CORS for your domain
-6. Enable HTTPS with SSL certificates
-
-### Recommended Platforms
-- **Frontend**: Vercel, Netlify, Cloudflare Pages
-- **Backend**: Railway, Render, Heroku, DigitalOcean
-- **Database**: MongoDB Atlas (recommended)
-- **Media**: Cloudinary (integrated)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Follow existing code style and conventions
-4. Write tests for new functionality
-5. Update documentation as needed
-6. Commit changes (`git commit -m 'Add amazing feature'`)
-7. Push to branch (`git push origin feature/amazing-feature`)
-8. Open Pull Request with detailed description
-
-### Development Guidelines
-- Follow ESLint rules and React best practices
-- Use TypeScript for new components when possible
-- Add comments for complex business logic
-- Test features across different screen sizes
-- Ensure accessibility compliance
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

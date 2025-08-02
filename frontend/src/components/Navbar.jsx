@@ -10,14 +10,12 @@ const Navbar = () => {
   const [showLogoutDropdown, setShowLogoutDropdown] = useState(false);
   const dropdownRef = useRef(null);
   
-  // Load friend requests when authenticated
   useEffect(() => {
     if (authUser) {
       getFriendRequests();
     }
   }, [authUser, getFriendRequests]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -81,7 +79,6 @@ const Navbar = () => {
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
 
-                {/* Logout Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button 
                     className="flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

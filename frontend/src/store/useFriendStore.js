@@ -9,7 +9,6 @@ export const useFriendStore = create((set, get) => ({
   isLoading: false,
   isSearching: false,
   
-  // Get all friends
   getFriends: async () => {
     set({ isLoading: true });
     try {
@@ -22,7 +21,6 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Get all friend requests
   getFriendRequests: async () => {
     set({ isLoading: true });
     try {
@@ -35,7 +33,6 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Search for users to add as friends
   searchUsers: async (query) => {
     if (!query || query.trim() === "") {
       set({ searchResults: [] });
@@ -53,7 +50,6 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Search existing friends
   searchFriends: async (query) => {
     if (!query || query.trim() === "") {
       await get().getFriends();
@@ -71,12 +67,10 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Send a friend request
   sendFriendRequest: async (userId) => {
     try {
       await axiosInstance.post(`/users/friend-request/${userId}`);
       
-      // Update the search results to reflect the sent request
       set(state => ({
         searchResults: state.searchResults.map(user => 
           user._id === userId 
@@ -91,12 +85,10 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Accept a friend request
   acceptFriendRequest: async (userId) => {
     try {
       await axiosInstance.put(`/users/friend-request/${userId}/accept`);
       
-      // Remove the request from the list and refresh friends
       set(state => ({
         friendRequests: state.friendRequests.filter(req => req.user._id !== userId)
       }));
@@ -108,12 +100,10 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Reject a friend request
   rejectFriendRequest: async (userId) => {
     try {
       await axiosInstance.put(`/users/friend-request/${userId}/reject`);
       
-      // Remove the request from the list
       set(state => ({
         friendRequests: state.friendRequests.filter(req => req.user._id !== userId)
       }));
@@ -124,7 +114,6 @@ export const useFriendStore = create((set, get) => ({
     }
   },
   
-  // Reset search results
   clearSearchResults: () => {
     set({ searchResults: [] });
   }

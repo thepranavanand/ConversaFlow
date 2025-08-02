@@ -18,12 +18,10 @@ const AddFriendPage = () => {
     clearSearchResults 
   } = useFriendStore();
   
-  // Clear search results when unmounting
   useEffect(() => {
     return () => clearSearchResults();
   }, [clearSearchResults]);
   
-  // Handle search with debounce
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === "") {
       setSearchResults([]);
@@ -37,7 +35,6 @@ const AddFriendPage = () => {
     return () => clearTimeout(delaySearch);
   }, [searchQuery]);
   
-  // Direct API call to search users
   const searchUsers = async (query) => {
     try {
       setIsSearching(true);
@@ -45,11 +42,9 @@ const AddFriendPage = () => {
       
       console.log("Searching for users with query:", query);
       
-      // Use axiosInstance which has proper CORS configuration
       const response = await axiosInstance.get(`/users/search?query=${encodeURIComponent(query)}`);
       console.log("Search results received:", response.data);
       
-      // Set search results
       setSearchResults(response.data || []);
     } catch (error) {
       console.error("Error searching users:", error);
@@ -62,7 +57,6 @@ const AddFriendPage = () => {
   const handleSendRequest = async (userId) => {
     try {
       await sendFriendRequest(userId);
-      // Update UI to show pending
       setSearchResults(results => 
         results.map(user => 
           user._id === userId 
@@ -78,7 +72,6 @@ const AddFriendPage = () => {
   const handleAcceptRequest = async (userId) => {
     try {
       await acceptFriendRequest(userId);
-      // Remove from search results
       setSearchResults(results => 
         results.filter(user => user._id !== userId)
       );
@@ -90,7 +83,6 @@ const AddFriendPage = () => {
   const handleRejectRequest = async (userId) => {
     try {
       await rejectFriendRequest(userId);
-      // Update UI
       setSearchResults(results => 
         results.map(user => 
           user._id === userId 
@@ -112,7 +104,6 @@ const AddFriendPage = () => {
         <h1 className="text-2xl font-bold">Add Friends</h1>
       </div>
       
-      {/* Search input */}
       <div className="mb-6">
         <div className="relative">
           <input
@@ -129,7 +120,6 @@ const AddFriendPage = () => {
         </p>
       </div>
       
-      {/* Search results */}
       <div className="space-y-4">
         {isSearching ? (
           <div className="flex justify-center p-8">

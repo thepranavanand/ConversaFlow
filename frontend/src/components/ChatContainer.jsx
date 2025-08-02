@@ -22,7 +22,6 @@ const ChatContainer = ({ showExecutionGraph, setShowExecutionGraph }) => {
   const messageEndRef = useRef(null);
   const [showAutoDeletionBanner, setShowAutoDeletionBanner] = useState(true);
 
-  // Force re-render when user profiles or auth user changes
   const [renderKey, setRenderKey] = useState(0);
 
   useEffect(() => {

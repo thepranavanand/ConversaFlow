@@ -20,11 +20,9 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Username must be at least 3 characters" });
     }
 
-    // Check if email already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) return res.status(400).json({ message: "Email already exists" });
     
-    // Check if username already exists
     const existingUsername = await User.findOne({ username });
     if (existingUsername) return res.status(400).json({ message: "Username already taken" });
 
@@ -39,7 +37,6 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      // generate jwt token here
       generateToken(newUser._id, res);
       await newUser.save();
 
@@ -67,7 +64,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Username/email and password are required" });
     }
     
-    // Find user by username or email
     const user = await User.findOne({
       $or: [
         { email: login },
@@ -79,29 +75,25 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
     
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
     
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
     
-    // Set secure HTTP-only cookie
     res.cookie("jwt", token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/"
     });
     
-    // Return user data (exclude password)
     return res.json({
       _id: user._id,
       username: user.username,
@@ -134,7 +126,6 @@ export const updateProfile = async (req, res) => {
     const updateData = {};
     let updatedUser;
 
-    // Handle profile picture update
     if (profilePic) {
       console.log("Updating profile picture");
       const uploadResponse = await cloudinary.uploader.upload(profilePic, {
@@ -148,16 +139,13 @@ export const updateProfile = async (req, res) => {
       updateData.profilePic = uploadResponse.secure_url;
     }
 
-    // Handle username update
     if (username) {
       console.log("Attempting to update username to:", username);
       
-      // Validate username
       if (username.length < 3) {
         return res.status(400).json({ message: "Username must be at least 3 characters" });
       }
       
-      // Check if the username is already taken (but not by the current user)
       const existingUser = await User.findOne({ username, _id: { $ne: userId } });
       if (existingUser) {
         return res.status(400).json({ message: "Username already taken" });
@@ -166,7 +154,6 @@ export const updateProfile = async (req, res) => {
       updateData.username = username;
     }
 
-    // Update the user if we have data to update
     if (Object.keys(updateData).length > 0) {
       updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -174,7 +161,6 @@ export const updateProfile = async (req, res) => {
         { new: true }
       );
 
-      // Broadcast profile update to all users via socket.io
       const io = getIO();
       if (io) {
         console.log('Broadcasting profile update for user:', userId);
@@ -187,7 +173,6 @@ export const updateProfile = async (req, res) => {
 
       res.status(200).json(updatedUser);
     } else {
-      // No updates to make
       updatedUser = await User.findById(userId);
       res.status(200).json(updatedUser);
     }
@@ -205,5 +190,3 @@ export const checkAuth = (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-// Test login endpoint removed for security reasons
