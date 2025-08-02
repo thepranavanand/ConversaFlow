@@ -1,23 +1,23 @@
-# 💬 Enterprise Chat Application
+# Enterprise Chat Application
 
 A production-ready, full-stack real-time chat application built with modern web technologies. Features advanced messaging capabilities, comprehensive file storage, intelligent message organization, and enterprise-grade user management.
 
-## ✨ Core Features
+## Core Features
 
-### 🔐 Authentication & Security
+### Authentication & Security
 - **JWT Authentication** - Secure token-based authentication with HTTP-only cookies
 - **Password Security** - bcrypt hashing with configurable salt rounds
 - **Session Management** - Persistent login sessions with automatic token refresh
 - **Profile Management** - User profile updates with Cloudinary integration
 
-### 💬 Advanced Messaging System  
+### Advanced Messaging System  
 - **Real-time Communication** - Bidirectional messaging powered by Socket.io
 - **Message Threading** - Reply to specific messages with contextual display
 - **Message Status Tracking** - Real-time delivery and read receipts
 - **Optimistic UI Updates** - Instant message display with rollback on failure
 - **Auto-cleanup** - Scheduled deletion of messages older than 7 days
 
-### 🏷️ Intelligent Message Organization
+### Intelligent Message Organization
 - **Workflow Tags** - 10 predefined message categories for business communication:
   - `@taskRequest` - Task assignments and work requests
   - `@statusUpdate` - Project progress and status reports  
@@ -34,7 +34,7 @@ A production-ready, full-stack real-time chat application built with modern web 
 - **Execution Graph Panel** - Visual workflow tracking and tag-based filtering
 - **Message Linking** - Reference and connect related messages
 
-### 📁 Multi-Storage File System
+### Multi-Storage File System
 - **GridFS Integration** - Large file storage (up to 100MB) directly in MongoDB
 - **Cloudinary CDN** - Image optimization, transformation, and global delivery
 - **Local Fallback** - Disk storage for development and backup scenarios
@@ -42,14 +42,14 @@ A production-ready, full-stack real-time chat application built with modern web 
 - **Progress Tracking** - Real-time upload progress with cancellation support
 - **Format Support** - Images, documents, videos, and custom file types
 
-### 👥 Social Network Features
+### Social Network Features
 - **Friend System** - Send, accept, reject, and manage friend connections
 - **User Discovery** - Search users by username or display name
 - **Online Presence** - Real-time online/offline status indicators
 - **Friend Requests** - Complete request lifecycle management
 - **User Profiles** - Comprehensive user information and customization
 
-### 🎨 User Experience
+### User Experience
 - **Responsive Design** - Optimized layouts for desktop, tablet, and mobile
 - **Theme System** - Dark and light mode with persistent preferences
 - **Loading States** - Skeleton screens and progressive loading
@@ -57,14 +57,14 @@ A production-ready, full-stack real-time chat application built with modern web 
 - **Toast Notifications** - Non-intrusive feedback system
 - **Keyboard Shortcuts** - Power user navigation and actions
 
-### 🔧 System Administration
+### System Administration
 - **Scheduled Tasks** - Automated maintenance using node-cron
 - **Socket Management** - Connection pooling and automatic reconnection
 - **File Validation** - Comprehensive size, type, and security checks
 - **CORS Security** - Configurable cross-origin resource sharing
 - **Environment Management** - Flexible configuration for multiple deployments
 
-## 🏗️ Architecture
+## Architecture
 
 ### Backend Stack
 - **Node.js** - Server-side JavaScript runtime
@@ -96,9 +96,9 @@ A production-ready, full-stack real-time chat application built with modern web 
 - **Nodemon** - Development server with auto-restart
 - **dotenv** - Environment variable management
 
-## 🚀 Quick Start
+## Quick Start
 
-## 🔐 Security Setup (IMPORTANT!)
+## Security Setup (IMPORTANT!)
 
 Before running this application:
 
@@ -186,7 +186,7 @@ npm run build
 npm start
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 chat-app/
@@ -254,7 +254,7 @@ chat-app/
 └── package.json                 # Root package configuration
 ```
 
-## 🔧 Scripts
+## Scripts
 
 ### Root Level
 - `npm run build` - Build complete application for production
@@ -270,7 +270,7 @@ chat-app/
 - `npm run preview` - Preview production build
 - `npm run lint` - Code quality checking
 
-## 💡 Usage Examples
+## Usage Examples
 
 ### Message Tagging
 ```javascript
@@ -295,7 +295,7 @@ chat-app/
 3. Accept/reject requests with real-time updates
 4. View online status of friends
 
-## 🔒 Security Features
+## Security Features
 
 - **Authentication** - JWT tokens with secure HTTP-only cookies
 - **Authorization** - Route-level access control and user verification
@@ -305,11 +305,11 @@ chat-app/
 - **Input Sanitization** - XSS and injection prevention
 - **Environment Security** - Sensitive data isolation
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🏆 Features Showcase
+## Features Showcase
 
 This application demonstrates:
 - **Advanced React Patterns** - Hooks, context, state management
@@ -323,6 +323,5 @@ This application demonstrates:
 
 ---
 
-**🌟 Star this repository if you find it useful!**
+**Star this repository if you find it useful!**
 
-Built with ❤️ using modern web technologies and best practices.
