@@ -1,6 +1,6 @@
-# Enterprise Chat Application
+# ConversaFlow - Where Conversations Become Organized Action Items
 
-A production-ready, full-stack real-time chat application built with modern web technologies. Features advanced messaging capabilities, comprehensive file storage, intelligent message organization, and enterprise-grade user management.
+A full-stack real-time chat application that transforms conversations into organized workflows. Features advanced messaging capabilities, intelligent task tagging, visual workflow tracking, comprehensive file storage, and enterprise-grade user management.
 
 ## Core Features
 
@@ -17,21 +17,21 @@ A production-ready, full-stack real-time chat application built with modern web 
 - **Optimistic UI Updates** - Instant message display with rollback on failure
 - **Auto-cleanup** - Scheduled deletion of messages older than 7 days
 
-### Intelligent Message Organization
-- **Workflow Tags** - 10 predefined message categories for business communication:
-  - `@taskRequest` - Task assignments and work requests
-  - `@statusUpdate` - Project progress and status reports  
-  - `@clarificationNeeded` - Questions requiring clarification
-  - `@deadlineReminder` - Time-sensitive notifications
-  - `@bugReport` - Technical issues and bug reports
-  - `@messageAcknowledged` - Confirmation and acknowledgment
-  - `@urgentNotice` - High-priority communications
-  - `@meetingSchedule` - Meeting coordination
-  - `@infoSharing` - Information dissemination
-  - `@workFeedback` - Performance and work evaluation
+### Intelligent Workflow Organization
+- **Action Tags** - 10 predefined message categories for workflow management:
+  - `@task` - Task assignments and work requests
+  - `@decision` - Important decisions and choices
+  - `@deadline` - Time-sensitive deadlines and due dates
+  - `@defer` - Items to be postponed or rescheduled
+  - `@confirm` - Confirmations and acknowledgments
+  - `@wait` - Items waiting for external input or action
+  - `@done` - Completed tasks and achievements
+  - `@fail` - Failed attempts and issues encountered
+  - `@abort` - Cancelled or abandoned items
+  - `@retry` - Items requiring another attempt
 
-- **Metadata System** - Key-value pairs for additional message context
-- **Execution Graph Panel** - Visual workflow tracking and tag-based filtering
+- **Metadata System** - Key-value pairs for additional context (e.g., `@task[priority:high, due:tomorrow]`)
+- **Execution Graph Panel** - Visual workflow tracking with tag-based filtering and organization
 - **Message Linking** - Reference and connect related messages
 
 ### Multi-Storage File System
@@ -272,22 +272,34 @@ chat-app/
 
 ## Usage Examples
 
-### Message Tagging
+### Workflow Tagging
 ```javascript
-// Basic tag
-@taskRequest Complete user authentication module
+// Basic action tag
+@task Complete user authentication module
 
 // Tag with metadata
-@statusUpdate[project:frontend,completion:75%] Frontend development progress
+@deadline[priority:high,due:tomorrow] Frontend development deadline
 
 // Complex workflow tag
-@bugReport[severity:critical,component:auth,assignee:developer] Login system failing
+@decision[impact:high,stakeholders:team] Choose authentication provider
+
+// Status updates
+@done User authentication module completed
+@fail Login system integration failed
+@retry Attempting to fix authentication issues
 ```
 
 ### File Sharing
 - **Images**: Drag & drop with automatic Cloudinary optimization
 - **Documents**: GridFS storage for files up to 100MB
 - **Progress**: Real-time upload progress with cancellation
+
+### Workflow Management
+1. **Tag Messages** - Use @task, @decision, @deadline, etc. to categorize conversations
+2. **Visual Organization** - View all tagged messages in the Execution Graph panel
+3. **Filter & Export** - Filter by tag type and export workflows as JSON or Markdown
+4. **Metadata Support** - Add context like `@task[priority:high, assignee:john]`
+5. **Status Tracking** - Mark items as @done, @fail, @abort, or @retry
 
 ### Friend Management
 1. Search users by username or display name
@@ -312,6 +324,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Features Showcase
 
 This application demonstrates:
+- **Workflow Integration** - Seamless transition from chat to organized action items
+- **Visual Task Management** - Execution Graph panel for workflow visualization
 - **Advanced React Patterns** - Hooks, context, state management
 - **Real-time Architecture** - WebSocket communication and event handling  
 - **File Storage Systems** - Multiple storage strategies and optimization
@@ -324,4 +338,3 @@ This application demonstrates:
 ---
 
 **Star this repository if you find it useful!**
-
